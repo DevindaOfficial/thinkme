@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Silk - Studio Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Thinkme - Studio Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;500&display=swap" rel="stylesheet">
     <style>
@@ -15,6 +15,8 @@
             overflow: hidden;
             font-family: 'Outfit', sans-serif;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         canvas {
@@ -124,10 +126,11 @@
         }
 
         /* Color Options */
-        .color-opt {
+        .color-opt, .paint-color-opt {
             transition: all 0.2s;
             cursor: pointer;
             position: relative;
+            flex-shrink: 0;
         }
         .color-opt::after {
             content: '';
@@ -153,6 +156,15 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+
+        /* Mobile Scrollbar Hide */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body>
@@ -164,45 +176,44 @@
     <canvas id="paintCanvas"></canvas>
     <div class="vignette"></div>
 
-    <!-- SILK MODE UI -->
-    <div id="ui-layer" class="fixed inset-0 flex flex-col justify-between p-8">
+    <!-- THINKME MODE UI -->
+    <div id="ui-layer" class="fixed inset-0 flex flex-col justify-between p-4 sm:p-8">
         <!-- TOP BAR: Branding & Actions -->
-        <div class="flex justify-between items-start">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-400 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.3)]">
-                    <div class="w-3 h-3 bg-black rounded-full mix-blend-overlay"></div>
+        <div class="flex justify-between items-start w-full">
+            <div class="flex items-center gap-2 sm:gap-4">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-400 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                    <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-black rounded-full mix-blend-overlay"></div>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-extralight tracking-[0.3em] uppercase text-white/95">Silk</h1>
-                    <p class="text-[9px] opacity-50 mt-1 uppercase tracking-[0.4em] text-blue-400">Studio Edition</p>
+                    <h1 class="text-xl sm:text-2xl font-extralight tracking-[0.2em] sm:tracking-[0.3em] uppercase text-white/95">Thinkme</h1>
+                    <p class="text-[7px] sm:text-[9px] opacity-50 mt-1 uppercase tracking-[0.4em] text-blue-400">Studio Edition</p>
                 </div>
             </div>
             
-            <div class="flex gap-3">
-                <!-- NEW: Make Paint Button -->
-                <button id="makePaintBtn" class="glass-btn px-6 py-2.5 rounded-full flex items-center gap-2 text-white/90 hover:text-white shadow-[0_0_15px_rgba(244,63,94,0.2)] border-rose-500/30 bg-rose-500/10">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
-                    <span class="text-[10px] uppercase tracking-widest font-bold text-rose-400">Make Paint</span>
+            <div class="flex gap-2 sm:gap-3">
+                <button id="makePaintBtn" class="glass-btn p-2 sm:px-6 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/90 hover:text-white shadow-[0_0_15px_rgba(244,63,94,0.2)] border-rose-500/30 bg-rose-500/10" title="Make Paint">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-bold text-rose-400">Make Paint</span>
                 </button>
-                <div class="w-px h-8 bg-white/10 mx-1"></div>
-                <button id="clearBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                    <span class="text-[10px] uppercase tracking-widest font-medium">Clear</span>
+                <div class="hidden sm:block w-px h-8 bg-white/10 mx-1"></div>
+                <button id="clearBtn" class="glass-btn p-2 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/70 hover:text-white" title="Clear">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Clear</span>
                 </button>
-                <button id="saveBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                    <span class="text-[10px] uppercase tracking-widest font-medium">Export</span>
+                <button id="saveBtn" class="glass-btn p-2 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/70 hover:text-white" title="Export">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Export</span>
                 </button>
             </div>
         </div>
 
-        <!-- BOTTOM DOCK: Silk Tools -->
-        <div class="flex justify-center pb-4">
-            <div class="glass-dock px-6 py-4 rounded-full flex items-center gap-6 overflow-x-auto max-w-[95vw]">
+        <!-- BOTTOM DOCK: Thinkme Tools -->
+        <div class="flex justify-center pb-2 sm:pb-4 w-full">
+            <div class="glass-dock px-4 py-3 sm:px-6 sm:py-4 rounded-[2rem] flex items-center gap-4 sm:gap-6 overflow-x-auto w-full max-w-[95vw] sm:max-w-fit hide-scrollbar">
                 
                 <!-- Color Palette -->
-                <div class="flex items-center gap-4">
-                    <div class="flex gap-3">
+                <div class="flex items-center gap-3 sm:gap-4 shrink-0">
+                    <div class="flex gap-2 sm:gap-3">
                         <button class="w-5 h-5 rounded-full color-opt active" style="background: #3b82f6; box-shadow: 0 0 15px rgba(59,130,246,0.4);" data-color="#3b82f6" data-type="solid"></button>
                         <button class="w-5 h-5 rounded-full color-opt" style="background: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.4);" data-color="#a855f7" data-type="solid"></button>
                         <button class="w-5 h-5 rounded-full color-opt" style="background: #f43f5e; box-shadow: 0 0 15px rgba(244,63,94,0.4);" data-color="#f43f5e" data-type="solid"></button>
@@ -215,92 +226,92 @@
                     </div>
                 </div>
 
-                <div class="h-6 w-px bg-white/10"></div>
+                <div class="h-6 w-px bg-white/10 shrink-0"></div>
 
                 <!-- Smoke Spread Control -->
-                <div class="flex items-center gap-3 min-w-[120px]" title="Smoke Spread Level">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+                <div class="flex items-center gap-2 sm:gap-3 min-w-[90px] sm:min-w-[120px] shrink-0" title="Smoke Spread Level">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="text-white/40 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
                     <input type="range" id="flowRange" min="0" max="100" value="50" class="flex-1">
                 </div>
 
-                <div class="h-6 w-px bg-white/10"></div>
+                <div class="h-6 w-px bg-white/10 shrink-0"></div>
 
                 <!-- Symmetry Control -->
-                <div class="flex items-center gap-4 min-w-[160px]">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m17 12 5 5-5 5"/><path d="m7 12-5 5 5 5"/><path d="m17 2 5 5-5 5"/><path d="m7 2-5 5 5 5"/></svg>
+                <div class="flex items-center gap-2 sm:gap-4 min-w-[110px] sm:min-w-[160px] shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="text-white/40 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m17 12 5 5-5 5"/><path d="m7 12-5 5 5 5"/><path d="m17 2 5 5-5 5"/><path d="m7 2-5 5 5 5"/></svg>
                     <input type="range" id="symRange" min="1" max="12" value="6" class="flex-1">
-                    <span id="symValue" class="text-[11px] font-medium text-white/80 w-4 text-center">6</span>
+                    <span id="symValue" class="text-[10px] sm:text-[11px] font-medium text-white/80 w-4 text-center">6</span>
                 </div>
 
-                <div class="h-6 w-px bg-white/10"></div>
+                <div class="h-6 w-px bg-white/10 shrink-0"></div>
 
                 <!-- Mirror Toggle -->
-                <button id="mirrorToggle" class="glass-btn active-tool px-6 py-2 rounded-full text-[10px] uppercase tracking-[0.2em] font-medium flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M3 7h6"/><path d="M3 17h6"/><path d="M21 7h-6"/><path d="M21 17h-6"/></svg>
-                    Mirror: On
+                <button id="mirrorToggle" class="glass-btn active-tool px-4 py-2 sm:px-6 sm:py-2 rounded-full text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-medium flex items-center justify-center gap-2 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" class="sm:w-[14px] sm:h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M3 7h6"/><path d="M3 17h6"/><path d="M21 7h-6"/><path d="M21 17h-6"/></svg>
+                    <span id="mirrorText">Mirror: On</span>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- PAINT MODE UI (Hidden by default) -->
-    <div id="paint-ui-layer" class="fixed inset-0 flex flex-col justify-between p-8 hidden-ui">
+    <div id="paint-ui-layer" class="fixed inset-0 flex flex-col justify-between p-4 sm:p-8 hidden-ui">
         <!-- TOP BAR: Paint Controls -->
-        <div class="flex justify-between items-start">
-            <button id="backToSilkBtn" class="glass-btn px-6 py-2.5 rounded-full flex items-center gap-2 text-white/90 hover:text-white">
+        <div class="flex justify-between items-start w-full">
+            <button id="backToThinkmeBtn" class="glass-btn p-2 sm:px-6 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/90 hover:text-white" title="Back to Thinkme">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                <span class="text-[10px] uppercase tracking-widest font-medium">Back to Silk</span>
+                <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Back to Thinkme</span>
             </button>
             
-            <div class="flex gap-3">
-                <button id="undoPaintBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-                    <span class="text-[10px] uppercase tracking-widest font-medium">Undo Paint</span>
+            <div class="flex gap-2 sm:gap-3">
+                <button id="undoPaintBtn" class="glass-btn p-2 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/70 hover:text-white" title="Undo Paint">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Undo</span>
                 </button>
-                <button id="clearPaintBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                    <span class="text-[10px] uppercase tracking-widest font-medium">Clear Paint</span>
+                <button id="clearPaintBtn" class="glass-btn p-2 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/70 hover:text-white" title="Clear Paint">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Clear</span>
                 </button>
-                <button id="savePaintBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                    <span class="text-[10px] uppercase tracking-widest font-medium">Export Art</span>
+                <button id="savePaintBtn" class="glass-btn p-2 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/70 hover:text-white" title="Export Art">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Export Art</span>
                 </button>
             </div>
         </div>
 
         <!-- BOTTOM DOCK: Paint Tools -->
-        <div class="flex justify-center pb-4">
-            <div class="glass-dock px-6 py-4 rounded-full flex items-center gap-6 overflow-x-auto max-w-[95vw]">
+        <div class="flex justify-center pb-2 sm:pb-4 w-full">
+            <div class="glass-dock px-4 py-3 sm:px-6 sm:py-4 rounded-[2rem] flex items-center gap-4 sm:gap-6 overflow-x-auto w-full max-w-[95vw] sm:max-w-fit hide-scrollbar">
                 
-                <!-- Brush / Eraser Toggle -->
-                <div class="flex gap-2">
-                    <button id="brushToolBtn" class="glass-btn active-paint-tool px-4 py-2 rounded-full flex items-center gap-2 text-white/90">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg>
-                        <span class="text-[10px] uppercase tracking-widest font-medium">Brush</span>
+                <!-- Brush / Eraser / Fill Toggle -->
+                <div class="flex gap-1.5 sm:gap-2 shrink-0">
+                    <button id="brushToolBtn" class="glass-btn active-paint-tool p-2.5 sm:px-4 sm:py-2 rounded-full flex items-center justify-center gap-2 text-white/90" title="Brush">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg>
+                        <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Brush</span>
                     </button>
-                    <button id="eraserToolBtn" class="glass-btn px-4 py-2 rounded-full flex items-center gap-2 text-white/70">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
-                        <span class="text-[10px] uppercase tracking-widest font-medium">Eraser</span>
+                    <button id="eraserToolBtn" class="glass-btn p-2.5 sm:px-4 sm:py-2 rounded-full flex items-center justify-center gap-2 text-white/70" title="Eraser">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+                        <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Eraser</span>
                     </button>
-                    <button id="fillToolBtn" class="glass-btn px-4 py-2 rounded-full flex items-center gap-2 text-white/70">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg>
-                        <span class="text-[10px] uppercase tracking-widest font-medium">Fill</span>
+                    <button id="fillToolBtn" class="glass-btn p-2.5 sm:px-4 sm:py-2 rounded-full flex items-center justify-center gap-2 text-white/70" title="Fill">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg>
+                        <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Fill</span>
                     </button>
                 </div>
 
-                <div class="h-6 w-px bg-white/10"></div>
+                <div class="h-6 w-px bg-white/10 shrink-0"></div>
 
                 <!-- Brush Size -->
-                <div class="flex items-center gap-3 min-w-[140px]" title="Brush Size">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                <div class="flex items-center gap-2 sm:gap-3 min-w-[100px] sm:min-w-[140px] shrink-0" title="Brush Size">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="text-white/40 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
                     <input type="range" id="paintSizeRange" min="1" max="50" value="8" class="flex-1">
-                    <span id="paintSizeValue" class="text-[11px] font-medium text-white/80 w-4 text-center">8</span>
+                    <span id="paintSizeValue" class="text-[10px] sm:text-[11px] font-medium text-white/80 w-4 text-center">8</span>
                 </div>
 
-                <div class="h-6 w-px bg-white/10"></div>
+                <div class="h-6 w-px bg-white/10 shrink-0"></div>
 
                 <!-- Paint Colors -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                     <button class="w-6 h-6 rounded-full paint-color-opt active shadow-[0_0_15px_rgba(255,255,255,0.4)] border border-white/20" style="background: #ffffff;" data-color="#ffffff"></button>
                     <button class="w-6 h-6 rounded-full paint-color-opt border border-white/20" style="background: #000000;" data-color="#000000"></button>
                     <button class="w-6 h-6 rounded-full paint-color-opt" style="background: #f43f5e;" data-color="#f43f5e"></button>
@@ -318,11 +329,11 @@
         const bgCanvas = document.getElementById('bgCanvas');
         const bgCtx = bgCanvas.getContext('2d');
         const fillCanvas = document.getElementById('fillCanvas');
-        const fillCtx = fillCanvas.getContext('2d');
+        const fillCtx = fillCanvas.getContext('2d', { willReadFrequently: true });
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const paintCanvas = document.getElementById('paintCanvas');
-        const paintCtx = paintCanvas.getContext('2d');
+        const paintCtx = paintCanvas.getContext('2d', { willReadFrequently: true });
 
         // --- App State ---
         let width, height, centerX, centerY;
@@ -332,11 +343,12 @@
         const silkUiLayer = document.getElementById('ui-layer');
         const paintUiLayer = document.getElementById('paint-ui-layer');
         
-        // --- Silk Mode Variables ---
+        // --- Thinkme Mode Variables ---
         const symRange = document.getElementById('symRange');
         const symValueText = document.getElementById('symValue');
         const flowRange = document.getElementById('flowRange');
         const mirrorToggle = document.getElementById('mirrorToggle');
+        const mirrorText = document.getElementById('mirrorText');
         const colorOpts = document.querySelectorAll('.color-opt');
         
         let isDrawing = false;
@@ -367,7 +379,7 @@
         let paintHistory = [];
         let paintStep = -1;
 
-        // --- Silk Physics Class ---
+        // --- Thinkme Physics Class ---
         class Strand {
             constructor(index) {
                 this.index = index;
@@ -475,7 +487,7 @@
             // 1. Get merged boundary image for collision detection
             const tCanvas = document.createElement('canvas');
             tCanvas.width = width; tCanvas.height = height;
-            const tCtx = tCanvas.getContext('2d');
+            const tCtx = tCanvas.getContext('2d', { willReadFrequently: true });
             tCtx.drawImage(fillCanvas, 0, 0); 
             tCtx.drawImage(canvas, 0, 0);     
             tCtx.drawImage(paintCanvas, 0, 0);
@@ -501,10 +513,10 @@
                 return;
             }
 
-            // 3. Color matching logic (allows bleeding under anti-aliased neon edges)
+            // 3. Color matching logic
             const matchStartColor = (pos) => {
                 const a = data[pos+3];
-                // If filling empty space, stop at solid borders (alpha > 80)
+                // If filling empty space, stop at solid borders
                 if (startA < 80) return a < 80;
                 
                 // If filling a solid color, match the color with tolerance
@@ -576,7 +588,7 @@
                 }
             }
 
-            // 5. Draw the filled area to the fill canvas
+            // 5. Draw the filled area
             const tempFillCanvas = document.createElement('canvas');
             tempFillCanvas.width = width;
             tempFillCanvas.height = height;
@@ -631,12 +643,19 @@
             bgCtx.restore();
         }
 
-        // --- Silk Mode Input Handling ---
+        // --- Mobile-Optimized Input Handling ---
+        function getEventPos(e) {
+            if(e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY, p: 0.5 };
+            }
+            return { x: e.clientX, y: e.clientY, p: e.pressure !== undefined && e.pressure > 0 ? e.pressure : 0.5 };
+        }
+
         function handleInput(e) {
-            targetX = e.clientX - centerX;
-            targetY = e.clientY - centerY;
-            if (e.pressure !== undefined) currentPressure = e.pressure > 0 ? e.pressure : 0.5;
-            else currentPressure = 0.5;
+            const pos = getEventPos(e);
+            targetX = pos.x - centerX;
+            targetY = pos.y - centerY;
+            currentPressure = pos.p;
         }
 
         function startSilkDrawing(e) {
@@ -650,7 +669,7 @@
             }
 
             strands.forEach(s => s.reset(targetX, targetY));
-            canvas.setPointerCapture(e.pointerId);
+            if(e.pointerId) canvas.setPointerCapture(e.pointerId);
         }
 
         function stopSilkDrawing(e) {
@@ -660,7 +679,7 @@
             }
         }
 
-        // --- Silk Render Loop ---
+        // --- Render Loop ---
         function renderSilk() {
             const angleStep = (Math.PI * 2) / symmetry;
             strands.forEach((strand, idx) => {
@@ -699,18 +718,19 @@
             ctx.stroke();
         }
 
-        // --- Paint Mode Input Handling ---
+        // --- Paint Input Handling ---
         function startPainting(e) {
             if (currentMode !== 'paint') return;
+            const pos = getEventPos(e);
             
             if (currentPaintTool === 'fill') {
-                floodFill(e.clientX, e.clientY, currentPaintColor);
+                floodFill(pos.x, pos.y, currentPaintColor);
                 return;
             }
 
             isPainting = true;
-            lastPaintX = e.clientX;
-            lastPaintY = e.clientY;
+            lastPaintX = pos.x;
+            lastPaintY = pos.y;
             
             paintCtx.beginPath();
             paintCtx.moveTo(lastPaintX, lastPaintY);
@@ -726,31 +746,31 @@
             }
             
             paintCtx.stroke();
-            paintCanvas.setPointerCapture(e.pointerId);
+            if(e.pointerId) paintCanvas.setPointerCapture(e.pointerId);
         }
 
         function drawPaint(e) {
             if (!isPainting || currentMode !== 'paint') return;
+            const pos = getEventPos(e);
             paintCtx.beginPath();
             paintCtx.moveTo(lastPaintX, lastPaintY);
-            paintCtx.lineTo(e.clientX, e.clientY);
+            paintCtx.lineTo(pos.x, pos.y);
             paintCtx.stroke();
             
-            lastPaintX = e.clientX;
-            lastPaintY = e.clientY;
+            lastPaintX = pos.x;
+            lastPaintY = pos.y;
         }
 
         function stopPainting(e) {
             if (isPainting && currentMode === 'paint') {
                 isPainting = false;
-                paintCanvas.releasePointerCapture(e.pointerId);
+                if(e && e.pointerId) paintCanvas.releasePointerCapture(e.pointerId);
                 savePaintState();
             }
         }
 
         // --- Paint Undo System ---
         function savePaintState() {
-            // Drop future states if we undid and drew again
             if (paintStep < paintHistory.length - 1) {
                 paintHistory.length = paintStep + 1;
             }
@@ -806,27 +826,20 @@
             tempCanvas.height = height;
             const tCtx = tempCanvas.getContext('2d');
             
-            // 1. Background
             tCtx.drawImage(bgCanvas, 0, 0);
             
-            // 2. Vignette
             let gradient = tCtx.createRadialGradient(width/2, height/2, height*0.3, width/2, height/2, width*0.7);
             gradient.addColorStop(0, 'rgba(0,0,0,0)');
             gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
             tCtx.fillStyle = gradient;
             tCtx.fillRect(0, 0, width, height);
 
-            // 3. Fill Layer
             tCtx.drawImage(fillCanvas, 0, 0);
-
-            // 4. Silk Layer
             tCtx.drawImage(canvas, 0, 0);
-            
-            // 5. Custom Paint Layer
             tCtx.drawImage(paintCanvas, 0, 0);
 
             const link = document.createElement('a');
-            link.download = `silk-studio-masterpiece-${Date.now()}.png`;
+            link.download = `thinkme-masterpiece-${Date.now()}.png`;
             link.href = tempCanvas.toDataURL('image/png');
             link.click();
         }
@@ -847,22 +860,30 @@
             }
         }
 
-        // --- Event Listeners ---
+        // --- Mobile and Mouse Event Listeners ---
         window.addEventListener('resize', init);
         
-        // Silk Events
+        // Thinkme (Silk) Events
         canvas.addEventListener('pointerdown', startSilkDrawing);
         canvas.addEventListener('pointermove', (e) => { if (isDrawing) handleInput(e); });
         canvas.addEventListener('pointerup', stopSilkDrawing);
         canvas.addEventListener('pointercancel', stopSilkDrawing);
+        // Direct touch listeners for mobile priority
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startSilkDrawing(e); }, {passive: false});
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (isDrawing) handleInput(e); }, {passive: false});
+        canvas.addEventListener('touchend', stopSilkDrawing);
 
         // Paint Events
         paintCanvas.addEventListener('pointerdown', startPainting);
         paintCanvas.addEventListener('pointermove', drawPaint);
         paintCanvas.addEventListener('pointerup', stopPainting);
         paintCanvas.addEventListener('pointercancel', stopPainting);
+        // Direct touch listeners for mobile priority
+        paintCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startPainting(e); }, {passive: false});
+        paintCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawPaint(e); }, {passive: false});
+        paintCanvas.addEventListener('touchend', stopPainting);
 
-        // Silk UI Controls
+        // UI Controls
         document.getElementById('makePaintBtn').addEventListener('click', () => toggleMode('paint'));
         document.getElementById('clearBtn').addEventListener('click', clearSilkCanvas);
         document.getElementById('saveBtn').addEventListener('click', exportImage);
@@ -879,10 +900,7 @@
 
         mirrorToggle.addEventListener('click', () => {
             isMirror = !isMirror;
-            mirrorToggle.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M3 7h6"/><path d="M3 17h6"/><path d="M21 7h-6"/><path d="M21 17h-6"/></svg>
-                Mirror: ${isMirror ? 'On' : 'Off'}
-            `;
+            mirrorText.innerText = `Mirror: ${isMirror ? 'On' : 'Off'}`;
             mirrorToggle.classList.toggle('active-tool', isMirror);
         });
 
@@ -899,8 +917,8 @@
             });
         });
 
-        // Paint UI Controls
-        document.getElementById('backToSilkBtn').addEventListener('click', () => toggleMode('silk'));
+        // Paint Controls
+        document.getElementById('backToThinkmeBtn').addEventListener('click', () => toggleMode('silk'));
         document.getElementById('undoPaintBtn').addEventListener('click', undoPaint);
         document.getElementById('clearPaintBtn').addEventListener('click', clearPaintLayer);
         document.getElementById('savePaintBtn').addEventListener('click', exportImage);
@@ -931,7 +949,6 @@
         const paintColorOpts = document.querySelectorAll('.paint-color-opt');
         paintColorOpts.forEach(opt => {
             opt.addEventListener('click', () => {
-                // Auto switch to brush tool when a color is clicked
                 if (currentPaintTool === 'eraser') brushToolBtn.click();
                 
                 paintColorOpts.forEach(o => {
