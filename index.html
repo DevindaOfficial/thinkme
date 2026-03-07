@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silk - Studio Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #030303;
+            color: white;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+            position: absolute;
+            inset: 0;
+        }
+
+        #bgCanvas { z-index: 0; }
+        #fillCanvas { z-index: 5; pointer-events: none; }
+        #canvas { z-index: 10; }
+        #paintCanvas { z-index: 15; pointer-events: none; }
+
+        /* Premium Vignette Effect */
+        .vignette {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%);
+        }
+
+        #ui-layer, #paint-ui-layer {
+            pointer-events: none;
+            z-index: 50; 
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        #ui-layer:not(.hidden-ui) .glass-dock,
+        #ui-layer:not(.hidden-ui) button,
+        #ui-layer:not(.hidden-ui) input,
+        #paint-ui-layer:not(.hidden-ui) .glass-dock,
+        #paint-ui-layer:not(.hidden-ui) button,
+        #paint-ui-layer:not(.hidden-ui) input { 
+            pointer-events: auto; 
+        }
+
+        .hidden-ui {
+            opacity: 0;
+            pointer-events: none !important;
+            transform: translateY(10px);
+        }
+
+        /* Sleek Glassmorphism */
+        .glass-dock {
+            background: rgba(15, 15, 18, 0.4);
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .active-tool {
+            background: rgba(59, 130, 246, 0.15) !important;
+            border-color: rgba(59, 130, 246, 0.5) !important;
+            color: #60a5fa;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        
+        .active-paint-tool {
+            background: rgba(244, 63, 94, 0.15) !important;
+            border-color: rgba(244, 63, 94, 0.5) !important;
+            color: #fb7185;
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.2);
+        }
+
+        /* Custom Pro Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 2px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Color Options */
+        .color-opt {
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+        .color-opt::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .color-opt.active::after {
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.1);
+        }
+
+        /* Rainbow Gradient Button */
+        .rainbow-bg {
+            background: linear-gradient(135deg, #ff0000, #ff8800, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
+            background-size: 200% 200%;
+            animation: rainbowShift 3s ease infinite;
+        }
+        @keyframes rainbowShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bgCanvas"></canvas>
+    <canvas id="fillCanvas"></canvas>
+    <canvas id="canvas"></canvas>
+    <!-- New Paint Canvas Layer -->
+    <canvas id="paintCanvas"></canvas>
+    <div class="vignette"></div>
+
+    <!-- SILK MODE UI -->
+    <div id="ui-layer" class="fixed inset-0 flex flex-col justify-between p-8">
+        <!-- TOP BAR: Branding & Actions -->
+        <div class="flex justify-between items-start">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-400 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                    <div class="w-3 h-3 bg-black rounded-full mix-blend-overlay"></div>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extralight tracking-[0.3em] uppercase text-white/95">Silk</h1>
+                    <p class="text-[9px] opacity-50 mt-1 uppercase tracking-[0.4em] text-blue-400">Studio Edition</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <!-- NEW: Make Paint Button -->
+                <button id="makePaintBtn" class="glass-btn px-6 py-2.5 rounded-full flex items-center gap-2 text-white/90 hover:text-white shadow-[0_0_15px_rgba(244,63,94,0.2)] border-rose-500/30 bg-rose-500/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+                    <span class="text-[10px] uppercase tracking-widest font-bold text-rose-400">Make Paint</span>
+                </button>
+                <div class="w-px h-8 bg-white/10 mx-1"></div>
+                <button id="clearBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    <span class="text-[10px] uppercase tracking-widest font-medium">Clear</span>
+                </button>
+                <button id="saveBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <span class="text-[10px] uppercase tracking-widest font-medium">Export</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- BOTTOM DOCK: Silk Tools -->
+        <div class="flex justify-center pb-4">
+            <div class="glass-dock px-6 py-4 rounded-full flex items-center gap-6 overflow-x-auto max-w-[95vw]">
+                
+                <!-- Color Palette -->
+                <div class="flex items-center gap-4">
+                    <div class="flex gap-3">
+                        <button class="w-5 h-5 rounded-full color-opt active" style="background: #3b82f6; box-shadow: 0 0 15px rgba(59,130,246,0.4);" data-color="#3b82f6" data-type="solid"></button>
+                        <button class="w-5 h-5 rounded-full color-opt" style="background: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.4);" data-color="#a855f7" data-type="solid"></button>
+                        <button class="w-5 h-5 rounded-full color-opt" style="background: #f43f5e; box-shadow: 0 0 15px rgba(244,63,94,0.4);" data-color="#f43f5e" data-type="solid"></button>
+                        <button class="w-5 h-5 rounded-full color-opt" style="background: #10b981; box-shadow: 0 0 15px rgba(16,185,129,0.4);" data-color="#10b981" data-type="solid"></button>
+                        <button class="w-5 h-5 rounded-full color-opt" style="background: #00f2ff; box-shadow: 0 0 15px rgba(0,242,255,0.4);" data-color="#00f2ff" data-type="solid"></button>
+                        
+                        <!-- Premium Dynamic Rainbow Button -->
+                        <div class="w-px h-5 bg-white/10 mx-1"></div>
+                        <button class="w-5 h-5 rounded-full color-opt rainbow-bg shadow-[0_0_15px_rgba(255,255,255,0.3)]" data-type="rainbow" title="Dynamic Prism"></button>
+                    </div>
+                </div>
+
+                <div class="h-6 w-px bg-white/10"></div>
+
+                <!-- Smoke Spread Control -->
+                <div class="flex items-center gap-3 min-w-[120px]" title="Smoke Spread Level">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+                    <input type="range" id="flowRange" min="0" max="100" value="50" class="flex-1">
+                </div>
+
+                <div class="h-6 w-px bg-white/10"></div>
+
+                <!-- Symmetry Control -->
+                <div class="flex items-center gap-4 min-w-[160px]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m17 12 5 5-5 5"/><path d="m7 12-5 5 5 5"/><path d="m17 2 5 5-5 5"/><path d="m7 2-5 5 5 5"/></svg>
+                    <input type="range" id="symRange" min="1" max="12" value="6" class="flex-1">
+                    <span id="symValue" class="text-[11px] font-medium text-white/80 w-4 text-center">6</span>
+                </div>
+
+                <div class="h-6 w-px bg-white/10"></div>
+
+                <!-- Mirror Toggle -->
+                <button id="mirrorToggle" class="glass-btn active-tool px-6 py-2 rounded-full text-[10px] uppercase tracking-[0.2em] font-medium flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M3 7h6"/><path d="M3 17h6"/><path d="M21 7h-6"/><path d="M21 17h-6"/></svg>
+                    Mirror: On
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAINT MODE UI (Hidden by default) -->
+    <div id="paint-ui-layer" class="fixed inset-0 flex flex-col justify-between p-8 hidden-ui">
+        <!-- TOP BAR: Paint Controls -->
+        <div class="flex justify-between items-start">
+            <button id="backToSilkBtn" class="glass-btn px-6 py-2.5 rounded-full flex items-center gap-2 text-white/90 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                <span class="text-[10px] uppercase tracking-widest font-medium">Back to Silk</span>
+            </button>
+            
+            <div class="flex gap-3">
+                <button id="undoPaintBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                    <span class="text-[10px] uppercase tracking-widest font-medium">Undo Paint</span>
+                </button>
+                <button id="clearPaintBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    <span class="text-[10px] uppercase tracking-widest font-medium">Clear Paint</span>
+                </button>
+                <button id="savePaintBtn" class="glass-btn px-5 py-2.5 rounded-full flex items-center gap-2 text-white/70 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <span class="text-[10px] uppercase tracking-widest font-medium">Export Art</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- BOTTOM DOCK: Paint Tools -->
+        <div class="flex justify-center pb-4">
+            <div class="glass-dock px-6 py-4 rounded-full flex items-center gap-6 overflow-x-auto max-w-[95vw]">
+                
+                <!-- Brush / Eraser Toggle -->
+                <div class="flex gap-2">
+                    <button id="brushToolBtn" class="glass-btn active-paint-tool px-4 py-2 rounded-full flex items-center gap-2 text-white/90">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg>
+                        <span class="text-[10px] uppercase tracking-widest font-medium">Brush</span>
+                    </button>
+                    <button id="eraserToolBtn" class="glass-btn px-4 py-2 rounded-full flex items-center gap-2 text-white/70">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+                        <span class="text-[10px] uppercase tracking-widest font-medium">Eraser</span>
+                    </button>
+                    <button id="fillToolBtn" class="glass-btn px-4 py-2 rounded-full flex items-center gap-2 text-white/70">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg>
+                        <span class="text-[10px] uppercase tracking-widest font-medium">Fill</span>
+                    </button>
+                </div>
+
+                <div class="h-6 w-px bg-white/10"></div>
+
+                <!-- Brush Size -->
+                <div class="flex items-center gap-3 min-w-[140px]" title="Brush Size">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                    <input type="range" id="paintSizeRange" min="1" max="50" value="8" class="flex-1">
+                    <span id="paintSizeValue" class="text-[11px] font-medium text-white/80 w-4 text-center">8</span>
+                </div>
+
+                <div class="h-6 w-px bg-white/10"></div>
+
+                <!-- Paint Colors -->
+                <div class="flex items-center gap-3">
+                    <button class="w-6 h-6 rounded-full paint-color-opt active shadow-[0_0_15px_rgba(255,255,255,0.4)] border border-white/20" style="background: #ffffff;" data-color="#ffffff"></button>
+                    <button class="w-6 h-6 rounded-full paint-color-opt border border-white/20" style="background: #000000;" data-color="#000000"></button>
+                    <button class="w-6 h-6 rounded-full paint-color-opt" style="background: #f43f5e;" data-color="#f43f5e"></button>
+                    <button class="w-6 h-6 rounded-full paint-color-opt" style="background: #eab308;" data-color="#eab308"></button>
+                    <button class="w-6 h-6 rounded-full paint-color-opt" style="background: #10b981;" data-color="#10b981"></button>
+                    <button class="w-6 h-6 rounded-full paint-color-opt" style="background: #3b82f6;" data-color="#3b82f6"></button>
+                    <button class="w-6 h-6 rounded-full paint-color-opt" style="background: #a855f7;" data-color="#a855f7"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Core Canvases ---
+        const bgCanvas = document.getElementById('bgCanvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        const fillCanvas = document.getElementById('fillCanvas');
+        const fillCtx = fillCanvas.getContext('2d');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const paintCanvas = document.getElementById('paintCanvas');
+        const paintCtx = paintCanvas.getContext('2d');
+
+        // --- App State ---
+        let width, height, centerX, centerY;
+        let currentMode = 'silk'; // 'silk' or 'paint'
+        
+        // --- UI Elements ---
+        const silkUiLayer = document.getElementById('ui-layer');
+        const paintUiLayer = document.getElementById('paint-ui-layer');
+        
+        // --- Silk Mode Variables ---
+        const symRange = document.getElementById('symRange');
+        const symValueText = document.getElementById('symValue');
+        const flowRange = document.getElementById('flowRange');
+        const mirrorToggle = document.getElementById('mirrorToggle');
+        const colorOpts = document.querySelectorAll('.color-opt');
+        
+        let isDrawing = false;
+        let symmetry = 6;
+        let isMirror = true;
+        let flowIntensity = 0.5;
+        let currentSilkColor = '#3b82f6';
+        let isRainbowMode = false;
+        const prismColors = ['#00f2ff', '#a855f7', '#f43f5e', '#facc15']; 
+        let prismIndex = 0;
+        let targetX = 0, targetY = 0;
+        let strands = [];
+        const numStrands = 80; 
+        let time = 0;
+        let stars = [];
+        let currentPressure = 0.5;
+        let smoothedPressure = 0.5;
+
+        // --- Paint Mode Variables ---
+        let isPainting = false;
+        let currentPaintTool = 'brush'; // 'brush', 'eraser', or 'fill'
+        let currentPaintColor = '#ffffff';
+        let currentPaintSize = 8;
+        let lastPaintX = 0;
+        let lastPaintY = 0;
+        
+        // Undo System
+        let paintHistory = [];
+        let paintStep = -1;
+
+        // --- Silk Physics Class ---
+        class Strand {
+            constructor(index) {
+                this.index = index;
+                this.x = 0;
+                this.y = 0;
+                this.oldX = 0;
+                this.oldY = 0;
+                this.oldOldX = 0;
+                this.oldOldY = 0;
+                this.vx = 0;
+                this.vy = 0;
+                this.spring = 0; 
+                this.friction = 0; 
+            }
+
+            update(tX, tY) {
+                this.oldOldX = this.oldX;
+                this.oldOldY = this.oldY;
+                this.oldX = this.x;
+                this.oldY = this.y;
+                let dx = tX - this.x;
+                let dy = tY - this.y;
+                this.vx += dx * this.spring;
+                this.vy += dy * this.spring;
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            reset(tX, tY) {
+                this.x = this.oldX = this.oldOldX = tX;
+                this.y = this.oldY = this.oldOldY = tY;
+                this.vx = 0;
+                this.vy = 0;
+            }
+        }
+
+        function updatePhysics() {
+            strands.forEach((strand, i) => {
+                let ratio = i / numStrands;
+                let baseSpring = 0.02 - (flowIntensity * 0.015);
+                let baseFriction = 0.75 + (flowIntensity * 0.20);
+                let curve = Math.pow(ratio, 1.2);
+                strand.spring = baseSpring + (1 - curve) * 0.06; 
+                strand.friction = baseFriction + curve * 0.08;   
+            });
+        }
+
+        // --- Initialization ---
+        function init() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+            
+            bgCanvas.width = width;
+            bgCanvas.height = height;
+            fillCanvas.width = width;
+            fillCanvas.height = height;
+            canvas.width = width;
+            canvas.height = height;
+            paintCanvas.width = width;
+            paintCanvas.height = height;
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            paintCtx.lineCap = 'round';
+            paintCtx.lineJoin = 'round';
+            
+            strands = [];
+            for (let i = 0; i < numStrands; i++) {
+                strands.push(new Strand(i));
+            }
+            updatePhysics();
+            
+            stars = [];
+            for(let i = 0; i < 600; i++) {
+                stars.push({
+                    x: (Math.random() - 0.5) * width * 2,
+                    y: (Math.random() - 0.5) * height * 2,
+                    z: Math.random() * width,
+                    prevZ: 0
+                });
+            }
+
+            // Save initial empty paint state
+            if(paintHistory.length === 0) {
+                savePaintState();
+            }
+        }
+
+        function hexToRgba(hex) {
+            let r = parseInt(hex.slice(1, 3), 16);
+            let g = parseInt(hex.slice(3, 5), 16);
+            let b = parseInt(hex.slice(5, 7), 16);
+            return {r, g, b, a: 255};
+        }
+
+        // --- Flood Fill Algorithm ---
+        function floodFill(startX, startY, fillColorHex) {
+            startX = Math.floor(startX);
+            startY = Math.floor(startY);
+            
+            // 1. Get merged boundary image for collision detection
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = width; tCanvas.height = height;
+            const tCtx = tCanvas.getContext('2d');
+            tCtx.drawImage(fillCanvas, 0, 0); 
+            tCtx.drawImage(canvas, 0, 0);     
+            tCtx.drawImage(paintCanvas, 0, 0);
+            
+            const imgData = tCtx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+
+            // 2. Prepare empty canvas data for our new fill area
+            const fillData = fillCtx.createImageData(width, height);
+            const fData = fillData.data;
+            const visited = new Uint8Array(width * height);
+
+            const startPos = (startY * width + startX) * 4;
+            const startR = data[startPos];
+            const startG = data[startPos+1];
+            const startB = data[startPos+2];
+            const startA = data[startPos+3];
+            
+            const fc = hexToRgba(fillColorHex);
+
+            // Avoid infinite loop if clicking on the exact same color
+            if (startA >= 80 && Math.abs(startR - fc.r) < 5 && Math.abs(startG - fc.g) < 5 && Math.abs(startB - fc.b) < 5) {
+                return;
+            }
+
+            // 3. Color matching logic (allows bleeding under anti-aliased neon edges)
+            const matchStartColor = (pos) => {
+                const a = data[pos+3];
+                // If filling empty space, stop at solid borders (alpha > 80)
+                if (startA < 80) return a < 80;
+                
+                // If filling a solid color, match the color with tolerance
+                const r = data[pos];
+                const g = data[pos+1];
+                const b = data[pos+2];
+                return Math.abs(r - startR) < 40 &&
+                       Math.abs(g - startG) < 40 &&
+                       Math.abs(b - startB) < 40 &&
+                       Math.abs(a - startA) < 40;
+            };
+
+            if (!matchStartColor(startPos)) return;
+
+            // 4. Span fill algorithm
+            const pixelStack = [startX, startY];
+
+            while(pixelStack.length > 0) {
+                let y = pixelStack.pop();
+                let x = pixelStack.pop();
+
+                let currentPos = (y * width + x) * 4;
+                let pixelIndex = y * width + x;
+
+                while(y >= 0 && matchStartColor(currentPos) && !visited[pixelIndex]) {
+                    y--;
+                    currentPos -= width * 4;
+                    pixelIndex -= width;
+                }
+                y++;
+                currentPos += width * 4;
+                pixelIndex += width;
+
+                let reachLeft = false;
+                let reachRight = false;
+
+                while(y < height && matchStartColor(currentPos) && !visited[pixelIndex]) {
+                    fData[currentPos] = fc.r;
+                    fData[currentPos+1] = fc.g;
+                    fData[currentPos+2] = fc.b;
+                    fData[currentPos+3] = fc.a;
+                    visited[pixelIndex] = 1;
+
+                    if(x > 0) {
+                        if(matchStartColor(currentPos - 4) && !visited[pixelIndex - 1]) {
+                            if(!reachLeft) {
+                                pixelStack.push(x - 1, y);
+                                reachLeft = true;
+                            }
+                        } else if(reachLeft) {
+                            reachLeft = false;
+                        }
+                    }
+
+                    if(x < width - 1) {
+                        if(matchStartColor(currentPos + 4) && !visited[pixelIndex + 1]) {
+                            if(!reachRight) {
+                                pixelStack.push(x + 1, y);
+                                reachRight = true;
+                            }
+                        } else if(reachRight) {
+                            reachRight = false;
+                        }
+                    }
+
+                    y++;
+                    currentPos += width * 4;
+                    pixelIndex += width;
+                }
+            }
+
+            // 5. Draw the filled area to the fill canvas
+            const tempFillCanvas = document.createElement('canvas');
+            tempFillCanvas.width = width;
+            tempFillCanvas.height = height;
+            tempFillCanvas.getContext('2d').putImageData(fillData, 0, 0);
+
+            fillCtx.drawImage(tempFillCanvas, 0, 0);
+            savePaintState();
+        }
+
+        function clearSilkCanvas() {
+            ctx.clearRect(0, 0, width, height);
+        }
+
+        // --- Animated Background ---
+        function drawAnimatedBackground() {
+            time += 0.0005; 
+            bgCtx.fillStyle = '#020202';
+            bgCtx.fillRect(0, 0, width, height);
+
+            let bgGrad = bgCtx.createRadialGradient(width * 0.5, height * 0.5, 0, width * 0.5, height * 0.5, width * 0.8);
+            bgGrad.addColorStop(0, '#0a0d14');
+            bgGrad.addColorStop(1, '#000000');
+            bgCtx.fillStyle = bgGrad;
+            bgCtx.fillRect(0, 0, width, height);
+
+            bgCtx.save();
+            bgCtx.translate(width / 2, height / 2);
+            bgCtx.rotate(time); 
+
+            stars.forEach(star => {
+                star.prevZ = star.z;
+                star.z -= 0.15; 
+                if (star.z <= 1) {
+                    star.z = width;
+                    star.prevZ = width;
+                    star.x = (Math.random() - 0.5) * width * 2;
+                    star.y = (Math.random() - 0.5) * height * 2;
+                }
+                let sx = (star.x / star.z) * (width / 2);
+                let sy = (star.y / star.z) * (width / 2);
+                let px = (star.x / star.prevZ) * (width / 2);
+                let py = (star.y / star.prevZ) * (width / 2);
+
+                let brightness = 1 - (star.z / width); 
+                bgCtx.beginPath();
+                bgCtx.moveTo(px, py);
+                bgCtx.lineTo(sx, sy);
+                bgCtx.lineWidth = brightness * 1.5;
+                bgCtx.strokeStyle = `rgba(255, 255, 255, ${brightness * 0.6})`;
+                bgCtx.stroke();
+            });
+            bgCtx.restore();
+        }
+
+        // --- Silk Mode Input Handling ---
+        function handleInput(e) {
+            targetX = e.clientX - centerX;
+            targetY = e.clientY - centerY;
+            if (e.pressure !== undefined) currentPressure = e.pressure > 0 ? e.pressure : 0.5;
+            else currentPressure = 0.5;
+        }
+
+        function startSilkDrawing(e) {
+            if (currentMode !== 'silk') return;
+            isDrawing = true;
+            handleInput(e);
+
+            if (isRainbowMode) {
+                currentSilkColor = prismColors[prismIndex % 4];
+                prismIndex++;
+            }
+
+            strands.forEach(s => s.reset(targetX, targetY));
+            canvas.setPointerCapture(e.pointerId);
+        }
+
+        function stopSilkDrawing(e) {
+            isDrawing = false;
+            if (e && e.pointerId && currentMode === 'silk') {
+                canvas.releasePointerCapture(e.pointerId);
+            }
+        }
+
+        // --- Silk Render Loop ---
+        function renderSilk() {
+            const angleStep = (Math.PI * 2) / symmetry;
+            strands.forEach((strand, idx) => {
+                strand.update(targetX, targetY);
+                ctx.save();
+                ctx.translate(centerX, centerY);
+
+                for (let i = 0; i < symmetry; i++) {
+                    ctx.rotate(angleStep);
+                    drawNeonPath(strand, idx);
+                    if (isMirror) {
+                        ctx.save();
+                        ctx.scale(1, -1);
+                        drawNeonPath(strand, idx);
+                        ctx.restore();
+                    }
+                }
+                ctx.restore();
+            });
+        }
+
+        function drawNeonPath(strand, idx) {
+            ctx.globalCompositeOperation = 'lighter'; 
+            ctx.beginPath();
+            const xc = (strand.oldX + strand.x) / 2;
+            const yc = (strand.oldY + strand.y) / 2;
+            ctx.moveTo(strand.oldOldX, strand.oldOldY);
+            ctx.quadraticCurveTo(strand.oldX, strand.oldY, xc, yc);
+            ctx.shadowBlur = 0; 
+            ctx.strokeStyle = currentSilkColor;
+            
+            let ratio = idx / numStrands;
+            let alphaBase = 0.005 + (1 - ratio) * 0.04; 
+            ctx.globalAlpha = alphaBase + (smoothedPressure * 0.02);
+            ctx.lineWidth = 0.5 + Math.pow(1 - ratio, 2) * 2.0; 
+            ctx.stroke();
+        }
+
+        // --- Paint Mode Input Handling ---
+        function startPainting(e) {
+            if (currentMode !== 'paint') return;
+            
+            if (currentPaintTool === 'fill') {
+                floodFill(e.clientX, e.clientY, currentPaintColor);
+                return;
+            }
+
+            isPainting = true;
+            lastPaintX = e.clientX;
+            lastPaintY = e.clientY;
+            
+            paintCtx.beginPath();
+            paintCtx.moveTo(lastPaintX, lastPaintY);
+            paintCtx.lineTo(lastPaintX, lastPaintY);
+            paintCtx.lineWidth = currentPaintSize;
+            
+            if (currentPaintTool === 'eraser') {
+                paintCtx.globalCompositeOperation = 'destination-out';
+                paintCtx.strokeStyle = 'rgba(0,0,0,1)';
+            } else {
+                paintCtx.globalCompositeOperation = 'source-over';
+                paintCtx.strokeStyle = currentPaintColor;
+            }
+            
+            paintCtx.stroke();
+            paintCanvas.setPointerCapture(e.pointerId);
+        }
+
+        function drawPaint(e) {
+            if (!isPainting || currentMode !== 'paint') return;
+            paintCtx.beginPath();
+            paintCtx.moveTo(lastPaintX, lastPaintY);
+            paintCtx.lineTo(e.clientX, e.clientY);
+            paintCtx.stroke();
+            
+            lastPaintX = e.clientX;
+            lastPaintY = e.clientY;
+        }
+
+        function stopPainting(e) {
+            if (isPainting && currentMode === 'paint') {
+                isPainting = false;
+                paintCanvas.releasePointerCapture(e.pointerId);
+                savePaintState();
+            }
+        }
+
+        // --- Paint Undo System ---
+        function savePaintState() {
+            // Drop future states if we undid and drew again
+            if (paintStep < paintHistory.length - 1) {
+                paintHistory.length = paintStep + 1;
+            }
+            paintHistory.push({
+                paint: paintCanvas.toDataURL(),
+                fill: fillCanvas.toDataURL()
+            });
+            paintStep++;
+        }
+
+        function undoPaint() {
+            if (paintStep > 0) {
+                paintStep--;
+                let state = paintHistory[paintStep];
+                
+                let imgP = new Image();
+                imgP.src = state.paint;
+                imgP.onload = () => {
+                    paintCtx.clearRect(0, 0, width, height);
+                    paintCtx.drawImage(imgP, 0, 0);
+                };
+                
+                let imgF = new Image();
+                imgF.src = state.fill;
+                imgF.onload = () => {
+                    fillCtx.clearRect(0, 0, width, height);
+                    fillCtx.drawImage(imgF, 0, 0);
+                };
+            }
+        }
+
+        function clearPaintLayer() {
+            paintCtx.clearRect(0, 0, width, height);
+            fillCtx.clearRect(0, 0, width, height);
+            savePaintState();
+        }
+
+        // --- Main Animation Loop ---
+        function loop() {
+            smoothedPressure += (currentPressure - smoothedPressure) * 0.15;
+            drawAnimatedBackground();
+            
+            if (isDrawing && currentMode === 'silk') {
+                renderSilk();
+            }
+            requestAnimationFrame(loop);
+        }
+
+        // --- Unified Export Logic ---
+        function exportImage() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            // 1. Background
+            tCtx.drawImage(bgCanvas, 0, 0);
+            
+            // 2. Vignette
+            let gradient = tCtx.createRadialGradient(width/2, height/2, height*0.3, width/2, height/2, width*0.7);
+            gradient.addColorStop(0, 'rgba(0,0,0,0)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
+            tCtx.fillStyle = gradient;
+            tCtx.fillRect(0, 0, width, height);
+
+            // 3. Fill Layer
+            tCtx.drawImage(fillCanvas, 0, 0);
+
+            // 4. Silk Layer
+            tCtx.drawImage(canvas, 0, 0);
+            
+            // 5. Custom Paint Layer
+            tCtx.drawImage(paintCanvas, 0, 0);
+
+            const link = document.createElement('a');
+            link.download = `silk-studio-masterpiece-${Date.now()}.png`;
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // --- Mode Switching ---
+        function toggleMode(mode) {
+            currentMode = mode;
+            if (mode === 'paint') {
+                silkUiLayer.classList.add('hidden-ui');
+                paintUiLayer.classList.remove('hidden-ui');
+                paintCanvas.style.pointerEvents = 'auto';
+                canvas.style.pointerEvents = 'none';
+            } else {
+                paintUiLayer.classList.add('hidden-ui');
+                silkUiLayer.classList.remove('hidden-ui');
+                paintCanvas.style.pointerEvents = 'none';
+                canvas.style.pointerEvents = 'auto';
+            }
+        }
+
+        // --- Event Listeners ---
+        window.addEventListener('resize', init);
+        
+        // Silk Events
+        canvas.addEventListener('pointerdown', startSilkDrawing);
+        canvas.addEventListener('pointermove', (e) => { if (isDrawing) handleInput(e); });
+        canvas.addEventListener('pointerup', stopSilkDrawing);
+        canvas.addEventListener('pointercancel', stopSilkDrawing);
+
+        // Paint Events
+        paintCanvas.addEventListener('pointerdown', startPainting);
+        paintCanvas.addEventListener('pointermove', drawPaint);
+        paintCanvas.addEventListener('pointerup', stopPainting);
+        paintCanvas.addEventListener('pointercancel', stopPainting);
+
+        // Silk UI Controls
+        document.getElementById('makePaintBtn').addEventListener('click', () => toggleMode('paint'));
+        document.getElementById('clearBtn').addEventListener('click', clearSilkCanvas);
+        document.getElementById('saveBtn').addEventListener('click', exportImage);
+
+        symRange.addEventListener('input', (e) => {
+            symmetry = parseInt(e.target.value);
+            symValueText.innerText = symmetry;
+        });
+
+        flowRange.addEventListener('input', (e) => {
+            flowIntensity = parseInt(e.target.value) / 100;
+            updatePhysics();
+        });
+
+        mirrorToggle.addEventListener('click', () => {
+            isMirror = !isMirror;
+            mirrorToggle.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M3 7h6"/><path d="M3 17h6"/><path d="M21 7h-6"/><path d="M21 17h-6"/></svg>
+                Mirror: ${isMirror ? 'On' : 'Off'}
+            `;
+            mirrorToggle.classList.toggle('active-tool', isMirror);
+        });
+
+        colorOpts.forEach(opt => {
+            opt.addEventListener('click', () => {
+                colorOpts.forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                if(opt.dataset.type === 'rainbow') {
+                    isRainbowMode = true;
+                } else {
+                    isRainbowMode = false;
+                    currentSilkColor = opt.dataset.color;
+                }
+            });
+        });
+
+        // Paint UI Controls
+        document.getElementById('backToSilkBtn').addEventListener('click', () => toggleMode('silk'));
+        document.getElementById('undoPaintBtn').addEventListener('click', undoPaint);
+        document.getElementById('clearPaintBtn').addEventListener('click', clearPaintLayer);
+        document.getElementById('savePaintBtn').addEventListener('click', exportImage);
+
+        const brushToolBtn = document.getElementById('brushToolBtn');
+        const eraserToolBtn = document.getElementById('eraserToolBtn');
+        const fillToolBtn = document.getElementById('fillToolBtn');
+
+        function setActivePaintTool(tool, activeBtn) {
+            currentPaintTool = tool;
+            brushToolBtn.classList.remove('active-paint-tool');
+            eraserToolBtn.classList.remove('active-paint-tool');
+            fillToolBtn.classList.remove('active-paint-tool');
+            activeBtn.classList.add('active-paint-tool');
+        }
+
+        brushToolBtn.addEventListener('click', () => setActivePaintTool('brush', brushToolBtn));
+        eraserToolBtn.addEventListener('click', () => setActivePaintTool('eraser', eraserToolBtn));
+        fillToolBtn.addEventListener('click', () => setActivePaintTool('fill', fillToolBtn));
+
+        const paintSizeRange = document.getElementById('paintSizeRange');
+        const paintSizeValue = document.getElementById('paintSizeValue');
+        paintSizeRange.addEventListener('input', (e) => {
+            currentPaintSize = parseInt(e.target.value);
+            paintSizeValue.innerText = currentPaintSize;
+        });
+
+        const paintColorOpts = document.querySelectorAll('.paint-color-opt');
+        paintColorOpts.forEach(opt => {
+            opt.addEventListener('click', () => {
+                // Auto switch to brush tool when a color is clicked
+                if (currentPaintTool === 'eraser') brushToolBtn.click();
+                
+                paintColorOpts.forEach(o => {
+                    o.classList.remove('active');
+                    o.style.boxShadow = 'none';
+                });
+                opt.classList.add('active');
+                opt.style.boxShadow = `0 0 15px rgba(255,255,255,0.4)`;
+                currentPaintColor = opt.dataset.color;
+            });
+        });
+
+        // Start
+        init();
+        loop();
+    </script>
+</body>
+</html>
