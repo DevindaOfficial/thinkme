@@ -1,0 +1,166 @@
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #030303;
+            color: white;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+            position: absolute;
+            inset: 0;
+        }
+
+        #bgCanvas { z-index: 0; }
+        #fillCanvas { z-index: 5; pointer-events: none; }
+        #canvas { z-index: 10; }
+        #paintCanvas { z-index: 15; pointer-events: none; }
+
+        /* Premium Vignette Effect */
+        .vignette {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%);
+        }
+
+        #ui-layer, #paint-ui-layer {
+            pointer-events: none;
+            z-index: 50; 
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        #ui-layer:not(.hidden-ui) .glass-dock,
+        #ui-layer:not(.hidden-ui) .top-bar-container,
+        #ui-layer:not(.hidden-ui) button,
+        #ui-layer:not(.hidden-ui) input,
+        #paint-ui-layer:not(.hidden-ui) .glass-dock,
+        #paint-ui-layer:not(.hidden-ui) .top-bar-container,
+        #paint-ui-layer:not(.hidden-ui) button,
+        #paint-ui-layer:not(.hidden-ui) input { 
+            pointer-events: auto; 
+        }
+
+        .hidden-ui {
+            opacity: 0;
+            pointer-events: none !important;
+            transform: translateY(10px);
+        }
+
+        /* Sleek Glassmorphism */
+        .glass-dock {
+            background: rgba(15, 15, 18, 0.4);
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .glass-btn:active {
+            transform: scale(0.95);
+        }
+
+        .active-tool {
+            background: rgba(59, 130, 246, 0.15) !important;
+            border-color: rgba(59, 130, 246, 0.5) !important;
+            color: #60a5fa;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        
+        .active-paint-tool {
+            background: rgba(244, 63, 94, 0.15) !important;
+            border-color: rgba(244, 63, 94, 0.5) !important;
+            color: #fb7185;
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.2);
+        }
+
+        /* Custom Pro Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 2px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Color Options */
+        .color-opt, .paint-color-opt {
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .color-opt::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .color-opt.active::after {
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.1);
+        }
+
+        /* Rainbow Gradient Button */
+        .rainbow-bg {
+            background: linear-gradient(135deg, #ff0000, #ff8800, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
+            background-size: 200% 200%;
+            animation: rainbowShift 3s ease infinite;
+        }
+        @keyframes rainbowShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Mobile Scrollbar Hide */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }

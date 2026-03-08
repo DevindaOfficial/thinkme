@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Thinkme - The Magic Silk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/thinkme.css">
+</head>
+<body>
+
+    <canvas id="bgCanvas"></canvas>
+    <canvas id="fillCanvas"></canvas>
+    <canvas id="canvas"></canvas>
+    <canvas id="paintCanvas"></canvas>
+    <div class="vignette"></div>
+
+    <div id="ui-layer" class="fixed inset-0 flex flex-col justify-between p-4 sm:p-8">
+        <!-- TOP BAR: Branding & Actions -->
+        <div class="flex justify-between items-start w-full top-bar-container">
+            <div class="flex items-center gap-2 sm:gap-4">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(0,242,255,0.2)]">
+                    <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-cyan-400 rounded-full animate-ping"></div>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-extralight tracking-[0.2em] sm:tracking-[0.3em] uppercase text-cyan-50">Thinkme</h1>
+                    <p class="text-[7px] sm:text-[9px] opacity-40 mt-1 uppercase tracking-[0.4em] text-cyan-400">The Magic Silk Algorithm</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-2 sm:gap-3 flex-wrap justify-end">
+                <button id="recordBtn" class="glass-btn p-2 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/70 hover:text-white transition-all">
+                    <div id="recordDot" class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]"></div>
+                    <span id="recordText" class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Record</span>
+                </button>
+                <div class="hidden sm:block w-px h-8 bg-white/10 mx-1"></div>
+                <button id="makePaintBtn" class="glass-btn p-2 sm:px-6 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-rose-400 hover:text-rose-300 border-rose-500/30 bg-rose-500/10 shadow-[0_0_15px_rgba(244,63,94,0.2)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-bold">Paint Mode</span>
+                </button>
+                <button id="clearBtn" class="glass-btn p-2 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/70 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Clear</span>
+                </button>
+                <button id="saveBtn" class="glass-btn p-2 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 bg-cyan-500/10 border-cyan-500/20 text-cyan-300 hover:text-cyan-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+                    <span class="hidden sm:inline text-[10px] uppercase tracking-widest font-medium">Save</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- BOTTOM DOCK: Thinkme Tools -->
+        <div class="flex flex-col sm:flex-row items-center justify-center pb-2 sm:pb-6 w-full gap-3 sm:gap-5 px-2">
+            <!-- Island 1: Settings -->
+            <div class="glass-dock px-5 py-3 sm:px-7 sm:py-4 rounded-[2rem] flex items-center justify-center gap-4 sm:gap-6 w-fit shadow-2xl border border-white/10 backdrop-blur-md">
+                <!-- Symmetry Control -->
+                <div class="flex items-center gap-2 sm:gap-3 min-w-[100px] sm:min-w-[140px] shrink-0 group">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="text-white/50 group-hover:text-purple-300 transition-colors sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20" /><path d="m17 12 5 5-5 5" /><path d="m7 12-5 5 5 5" /><path d="m17 2 5 5-5 5" /><path d="m7 2-5 5 5 5" /></svg>
+                    <input type="range" id="symRange" min="1" max="12" value="6" class="flex-1 accent-purple-400">
+                    <span id="symValue" class="text-[11px] sm:text-xs font-bold text-white/90 w-4 text-center">6</span>
+                </div>
+
+                <div class="h-8 w-px bg-white/10 shrink-0 hidden sm:block"></div>
+
+                <!-- Mirror Toggle -->
+                <button id="mirrorToggle" class="glass-btn active-tool px-4 py-2 rounded-full text-[10px] sm:text-xs uppercase tracking-[0.1em] font-semibold flex items-center justify-center gap-2 shrink-0 transition-transform active:scale-95 hidden sm:flex">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20" /><path d="M3 7h6" /><path d="M3 17h6" /><path d="M21 7h-6" /><path d="M21 17h-6" /></svg>
+                    <span id="mirrorText">Mirror: On</span>
+                </button>
+            </div>
+
+            <!-- Island 2: Color Palette -->
+            <div class="glass-dock px-5 py-3 sm:px-7 sm:py-4 rounded-[2rem] flex items-center justify-center gap-4 sm:gap-5 w-fit shadow-2xl border border-white/10 backdrop-blur-md">
+                <div class="flex gap-2.5 sm:gap-3">
+                    <button class="w-6 h-6 sm:w-7 sm:h-7 rounded-full color-opt active hover:scale-110 transition-transform" style="background: #00f2ff; box-shadow: 0 0 15px rgba(0,242,255,0.5);" data-color="#00f2ff"></button>
+                    <button class="w-6 h-6 sm:w-7 sm:h-7 rounded-full color-opt hover:scale-110 transition-transform" style="background: #3b82f6; box-shadow: 0 0 15px rgba(59,130,246,0.5);" data-color="#3b82f6"></button>
+                    <button class="w-6 h-6 sm:w-7 sm:h-7 rounded-full color-opt hover:scale-110 transition-transform" style="background: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.5);" data-color="#a855f7"></button>
+                    <button class="w-6 h-6 sm:w-7 sm:h-7 rounded-full color-opt hover:scale-110 transition-transform" style="background: #f43f5e; box-shadow: 0 0 15px rgba(244,63,94,0.5);" data-color="#f43f5e"></button>
+                    <button class="w-6 h-6 sm:w-7 sm:h-7 rounded-full color-opt hover:scale-110 transition-transform" style="background: #ffffff; box-shadow: 0 0 15px rgba(255,255,255,0.5);" data-color="#ffffff"></button>
+                </div>
+
+                <div class="h-6 w-px bg-white/20 shrink-0 sm:hidden"></div>
+                <!-- Mobile Mirror Toggle -->
+                <button id="mirrorToggleMobile" class="glass-btn active-tool p-2 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 sm:hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20" /><path d="M3 7h6" /><path d="M3 17h6" /><path d="M21 7h-6" /><path d="M21 17h-6" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAINT MODE UI (Hidden by default) -->
+    <div id="paint-ui-layer" class="fixed inset-0 flex flex-col justify-between p-4 sm:p-8 hidden-ui pointer-events-none">
+        <div class="flex justify-between items-start w-full top-bar-container">
+            <button id="backToThinkmeBtn" class="glass-btn p-2.5 sm:px-6 sm:py-3 rounded-full flex items-center justify-center gap-2 text-white/90 hover:text-cyan-300 shadow-lg border border-cyan-500/20 bg-cyan-900/10 hover:bg-cyan-800/30 transition-all active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                <span class="hidden sm:inline text-xs uppercase tracking-[0.15em] font-bold">Back to Silk</span>
+            </button>
+
+            <div class="flex gap-2 sm:gap-4">
+                <button id="undoPaintBtn" class="glass-btn p-2.5 sm:px-5 sm:py-3 rounded-full flex items-center justify-center gap-2 text-white/80 hover:text-white transition-all active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" /></svg>
+                    <span class="hidden sm:inline text-[11px] uppercase tracking-widest font-semibold">Undo</span>
+                </button>
+                <button id="clearPaintBtn" class="glass-btn p-2.5 sm:px-5 sm:py-3 rounded-full flex items-center justify-center gap-2 text-rose-300/80 hover:text-rose-400 border border-rose-500/10 hover:border-rose-500/30 hover:bg-rose-500/10 transition-all active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                    <span class="hidden sm:inline text-[11px] uppercase tracking-widest font-semibold">Clear Paint</span>
+                </button>
+                <div class="hidden sm:block w-px h-10 bg-white/10 mx-1"></div>
+                <button id="savePaintBtn" class="glass-btn p-2.5 sm:px-6 sm:py-3 rounded-full flex items-center justify-center gap-2 text-rose-300 hover:text-rose-400 border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+                    <span class="hidden sm:inline text-xs uppercase tracking-widest font-bold">Save Art</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-col xl:flex-row items-center justify-center pb-2 sm:pb-6 w-full gap-3 sm:gap-5 px-2">
+            <div class="glass-dock px-5 py-3 sm:px-7 sm:py-4 rounded-[2rem] flex items-center justify-center gap-4 sm:gap-6 w-fit shadow-2xl border border-white/10 backdrop-blur-md">
+                <div class="flex gap-2 sm:gap-3 shrink-0 bg-black/20 p-1 sm:p-1.5 rounded-full border border-white/5">
+                    <button id="brushToolBtn" class="glass-btn active-paint-tool p-2.5 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/90 transition-all hover:scale-105 active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08" /><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z" /></svg>
+                        <span class="hidden sm:inline text-[11px] uppercase tracking-widest font-bold">Brush</span>
+                    </button>
+                    <button id="eraserToolBtn" class="glass-btn p-2.5 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/60 hover:text-white/90 transition-all hover:scale-105 active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" /><path d="M22 21H7" /><path d="m5 11 9 9" /></svg>
+                        <span class="hidden sm:inline text-[11px] uppercase tracking-widest font-bold">Eraser</span>
+                    </button>
+                    <button id="fillToolBtn" class="glass-btn p-2.5 sm:px-5 sm:py-2.5 rounded-full flex items-center justify-center gap-2 text-white/60 hover:text-white/90 transition-all hover:scale-105 active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z" /><path d="m5 2 5 5" /><path d="M2 13h15" /><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z" /></svg>
+                        <span class="hidden sm:inline text-[11px] uppercase tracking-widest font-bold">Fill</span>
+                    </button>
+                </div>
+
+                <div class="h-8 w-px bg-white/10 shrink-0"></div>
+
+                <div class="flex items-center gap-2 sm:gap-3 min-w-[100px] sm:min-w-[150px] shrink-0 group">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="text-white/50 group-hover:text-rose-300 transition-colors sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /></svg>
+                    <input type="range" id="paintSizeRange" min="1" max="50" value="8" class="flex-1 accent-rose-400">
+                    <span id="paintSizeValue" class="text-[11px] sm:text-xs font-bold text-white/90 w-5 text-center">8</span>
+                </div>
+            </div>
+
+            <div class="glass-dock px-5 py-3 sm:px-7 sm:py-4 rounded-[2rem] flex items-center justify-center gap-2.5 sm:gap-3.5 w-fit shadow-2xl border border-white/10 backdrop-blur-md">
+                <button class="w-7 h-7 sm:w-8 sm:h-8 rounded-full paint-color-opt active border-2 border-white/30 hover:scale-110 transition-transform shadow-[0_0_15px_rgba(255,255,255,0.4)]" style="background: #ffffff;" data-color="#ffffff"></button>
+                <button class="w-7 h-7 sm:w-8 sm:h-8 rounded-full paint-color-opt border-2 border-white/10 hover:scale-110 transition-transform shadow-[0_4px_10px_rgba(0,0,0,0.5)]" style="background: #000000;" data-color="#000000"></button>
+                <button class="w-7 h-7 sm:w-8 sm:h-8 rounded-full paint-color-opt border-2 border-rose-500/20 hover:border-rose-500/50 hover:scale-110 transition-transform hover:shadow-[0_0_15px_rgba(244,63,94,0.4)]" style="background: #f43f5e;" data-color="#f43f5e"></button>
+                <button class="w-7 h-7 sm:w-8 sm:h-8 rounded-full paint-color-opt border-2 border-yellow-500/20 hover:border-yellow-500/50 hover:scale-110 transition-transform hover:shadow-[0_0_15px_rgba(234,179,8,0.4)]" style="background: #eab308;" data-color="#eab308"></button>
+                <button class="w-7 h-7 sm:w-8 sm:h-8 rounded-full paint-color-opt border-2 border-emerald-500/20 hover:border-emerald-500/50 hover:scale-110 transition-transform hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]" style="background: #10b981;" data-color="#10b981"></button>
+                <button class="w-7 h-7 sm:w-8 sm:h-8 rounded-full paint-color-opt border-2 border-blue-500/20 hover:border-blue-500/50 hover:scale-110 transition-transform hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]" style="background: #3b82f6;" data-color="#3b82f6"></button>
+                <button class="w-7 h-7 sm:w-8 sm:h-8 rounded-full paint-color-opt border-2 border-purple-500/20 hover:border-purple-500/50 hover:scale-110 transition-transform hover:shadow-[0_0_15px_rgba(168,85,247,0.4)]" style="background: #a855f7;" data-color="#a855f7"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/thinkme.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+        body { margin: 0; padding: 0; background-color: #000000; color: white; overflow: hidden; font-family: 'Outfit', sans-serif; user-select: none; }
+        canvas { display: block; touch-action: none; position: absolute; inset: 0; }
+        
+        #bgCanvas { z-index: 0; }
+        #fillCanvas { z-index: 5; pointer-events: none; }
+        #canvas { z-index: 10; }
+        #paintCanvas { z-index: 15; pointer-events: none; }
+
+        .vignette { position: absolute; inset: 0; z-index: 20; pointer-events: none; background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%); }
+        
+        #ui-layer, #paint-ui-layer { pointer-events: none; z-index: 50; transition: opacity 0.4s ease, transform 0.4s ease; }
+        #ui-layer:not(.hidden-ui) .glass-dock, #ui-layer:not(.hidden-ui) .top-bar-container, #ui-layer:not(.hidden-ui) button, #ui-layer:not(.hidden-ui) input,
+        #paint-ui-layer:not(.hidden-ui) .glass-dock, #paint-ui-layer:not(.hidden-ui) .top-bar-container, #paint-ui-layer:not(.hidden-ui) button, #paint-ui-layer:not(.hidden-ui) input { pointer-events: auto; }
+        .hidden-ui { opacity: 0; pointer-events: none !important; transform: translateY(10px); }
+
+        .glass-dock { background: rgba(10, 10, 12, 0.4); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8); }
+        .glass-btn { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s; cursor: pointer; }
+        .glass-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
+        .glass-btn:active { transform: scale(0.95); }
+        .active-tool { background: rgba(0, 242, 255, 0.1) !important; border-color: rgba(0, 242, 255, 0.4) !important; color: #00f2ff; }
+        .active-paint-tool { background: rgba(244, 63, 94, 0.15) !important; border-color: rgba(244, 63, 94, 0.5) !important; color: #fb7185; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-runnable-track { height: 2px; background: rgba(255, 255, 255, 0.15); }
+        input[type=range]::-webkit-slider-thumb { height: 14px; width: 14px; border-radius: 50%; background: #fff; -webkit-appearance: none; appearance: none; margin-top: -6px; box-shadow: 0 0 10px rgba(255,255,255,0.5); cursor: pointer;}
+
+        .color-opt, .paint-color-opt { cursor: pointer; border-radius: 50%; width: 22px; height: 22px; transition: transform 0.2s; border: 1px solid transparent; }
+        .active { outline: 2px solid white; outline-offset: 3px; transform: scale(1.1); }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .recording-pulse { border-color: #f43f5e !important; color: #f43f5e; box-shadow: 0 0 15px rgba(244, 63, 94, 0.3); animation: pulse 1.5s infinite; }
